@@ -1,0 +1,69 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+library(ggplot2)
+library(dplyr)
+dat <- read.csv("D:\\git\\GoogleEarthProjects\\water_index\\response61.csv")
+inundation <- read.csv("D:\\git\\GoogleEarthProjects\\water_index\\inundation.csv")
+inundation$date <- as.Date(paste(inundation$day,"/",inundation$month,"/",inundation$year,sep=''),format="%d/%m/%Y")
+dat$date <- as.Date(dat$date,format="%d-%m-%Y")
+dat$id <- as.factor(dat$id)
+inundation$Id <- as.factor(inundation$Id)
+inundation$inundated <- 0
+inundation[(inundation$Layer_1>0)&(inundation$Layer_1<8)&(is.na(inundation$Layer_1)==FALSE),]$inundated <- 1
+dat <- dat %>% left_join(inundation[,c("Id","date","inundated")],by = c("id" = "Id","date" = "date"))
+
+print(dat[dat$year>2022,])
+```
+```{r fig.width=15, fig.height=3}
+start_date <- as.Date("2019-01-01")
+end_date <- as.Date("2022-12-18")
+cov <- "non-woody-winsen"
+ggplot(dat[(dat$date>=start_date) & (dat$date<=end_date) & (dat$MSK_CLDPRB<20) & (dat$cov==cov),],aes(x=date,y = B12/10000,color = as.factor(ff), group_by=as.factor(id)))+geom_line()
+ggplot(dat[(dat$date>=start_date) & (dat$date<=end_date)  & (dat$MSK_CLDPRB<20) & (dat$cov==cov),],aes(x=date,y = B8A/10000,color = as.factor(ff), group_by=as.factor(id)))+geom_line()
+
+ggplot(dat[(dat$date>=start_date) & (dat$date<=end_date)  & (dat$MSK_CLDPRB<1) & (dat$cov==cov),],aes(x=date,y = FWI/10000,color = as.factor(ff), group_by=as.factor(id)))+geom_line()
+ggplot(dat[(dat$date>=start_date) & (dat$date<=end_date)  & (dat$MSK_CLDPRB<2) & (dat$cov==cov),],aes(x=date,y = NDVI,color = as.factor(ff), group_by=as.factor(id)))+geom_line()
+ggplot(dat[(dat$date>=start_date) & (dat$date<=end_date)  & (dat$MSK_CLDPRB<2) & (dat$cov==cov),],aes(x=date,y = SWI,color = as.factor(ff), group_by=as.factor(id)))+geom_smooth(method="loess",span = 0.1)+geom_point(aes(x=date, y=inundated,color = as.factor(ff), group_by=as.factor(id) ))
+ggplot(dat[(dat$date>=start_date) & (dat$date<=end_date)  & (dat$MSK_CLDPRB<1) & (dat$cov==cov),],aes(x=date,y = NDWI,color = as.factor(ff), group_by=as.factor(id)))+geom_smooth(method="loess",span = 0.1)+geom_step(aes(x=date, y=inundated,color = as.factor(ff), group_by=as.factor(id) ))
+ggplot(dat[(dat$date>=start_date) & (dat$date<=end_date)  & (dat$MSK_CLDPRB<1) & (dat$cov==cov),],aes(x=date,y = FWI/10000,color = as.factor(ff), group_by=as.factor(id)))+geom_smooth(method="loess",span = 0.1)+geom_step(aes(x=date, y=inundated,color = as.factor(ff), group_by=as.factor(id) ))
+ggplot(dat[(dat$date>=start_date) & (dat$date<=end_date)  & (dat$MSK_CLDPRB<1) & (dat$cov==cov),],aes(x=date,y = NDVI,color = as.factor(ff), group_by=as.factor(id)))+geom_smooth(method="loess",span = 0.1)+geom_step(aes(x=date, y=inundated,color = as.factor(ff), group_by=as.factor(id) ))
+ggplot(dat[(dat$date>=start_date) & (dat$date<=end_date)  & (dat$MSK_CLDPRB<1) & (dat$cov==cov),],aes(x=date,y = B12,color = as.factor(ff), group_by=as.factor(id)))+geom_smooth(method="loess",span = 0.1)+geom_step(aes(x=date, y=inundated,color = as.factor(ff), group_by=as.factor(id) ))
+ggplot(dat[(dat$date>=start_date) & (dat$date<=end_date)  & (dat$MSK_CLDPRB<1) & (dat$cov==cov),],aes(x=date,y = B8/10000,color = as.factor(ff), group_by=as.factor(id)))+geom_smooth(method="loess",span = 0.1)+  geom_step(data=inundation,aes(x=date, y=inundated,color = as.factor(ff), group_by=as.factor(id) ))
+
+
+ggplot(dat[(dat$date>=start_date) & (dat$date<=end_date)  & (dat$MSK_CLDPRB<1) & (dat$cov==cov),],aes(x=date,y = NDWI,color = as.factor(ff), group_by=as.factor(id)))+geom_line()
+```
+
+```{r}
+d <- dat[(dat$date>=start_date) & (dat$date<=end_date)  & (dat$MSK_CLDPRB<1) & (dat$cov==cov),]
+i <- inundation[(inundation$date>=start_date) & (inundation$date<=end_date)& (dat$cov==cov),]
+
+ggplot()+geom_smooth(data = d, aes(x=date,y = FWI,color = as.factor(ff), group_by=as.factor(id)),method="loess",span = 0.1)+
+  geom_point(data = i[i$inundated==1,],aes(x=date, y=inundated-1,color = as.factor(ff), group_by=as.factor(Id)))
+ggplot()+  geom_point(data = i,aes(x=date, y=inundated-1,color = as.factor(ff), group_by=as.factor(Id)))
+```
+
+```{r}
+dat <- read.csv("D:\\git\\GoogleEarthProjects\\water_index\\response_sen1.csv")
+print(dat)
+dat$date <- as.Date(dat$date,format="%d-%m-%Y")
+dat$id <- as.factor(dat$id)
+head(dat)
+dat$nd <- (dat$VH-dat$VV)/(dat$VH+dat$VV)
+```
+
+```{r}
+cov <- "non-woody"
+ggplot(dat[(dat$cov==cov),],aes(x=date,y = nd,color = as.factor(ff), group_by=as.factor(id)))+geom_line()
+ggplot(dat[(dat$cov==cov),],aes(x=date,y = VV,color = as.factor(ff), group_by=as.factor(id)))+geom_line()
+
+```
+
